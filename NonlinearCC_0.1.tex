@@ -1,0 +1,546 @@
+\documentclass[11pt,twocolumn]{article}
+%\usepackage{times}
+\usepackage{color}
+\usepackage{multirow}
+\usepackage[tight,footnotesize]{subfigure}
+\usepackage{sectsty}
+\usepackage{titlesec}
+\usepackage{authblk}
+\usepackage[cm]{fullpage}
+
+
+\usepackage{latexsym, bm, amsmath, amssymb, amsthm, bbm, epsf, graphicx}
+
+\usepackage{import}
+\usepackage{float}
+\usepackage{color}
+
+\usepackage{cite}
+\usepackage{array}
+
+
+\usepackage{mdwmath}
+\usepackage{mdwtab}
+\usepackage{eqparbox}
+\usepackage[tight,footnotesize]{subfigure}
+%\usepackage[authoryear]{natbib}
+%
+\usepackage{rotating}
+\usepackage{bbm}
+\usepackage{latexsym}
+%\DeclareGraphicsExtensions{.eps,.png}
+
+
+\import{/Users/xaq/Code/TeX/}{TeX_definitions.tex}
+
+
+
+
+%\interfootnotelinepenalty=10000
+%
+%\renewcommand{\thesubsubsection}{\arabic{section}.\arabic{subsubsection}}
+%\newcommand{\myparagraph}[1]{\ \\{\em #1}.\ \ }
+\newcommand{\citealtt}[1]{\citeauthor{#1},\citeyear{#1}}
+\newcommand{\myycite}[1]{\citep{#1}}
+
+% Different font in captions
+\newcommand{\captionfonts}{\normalsize}
+
+\title{\bf Revealing nonlinear neural decoding by choice analysis}
+\author[1]{Qianli Yang}
+\author[1,2]{Xaq Pitkow}
+\affil[1]{Rice University, Department of Electrical and Computer Engineering}
+\affil[2]{Baylor College of Medicine, Department of Neuroscience}
+\date{}
+
+\begin{document}
+
+\maketitle
+\vspace{-2cm}
+
+
+%\ \\[-2mm]
+%{\bf Keywords:} Nonlinearity, Information-limiting Noise, Sufficient Statistics, Quadratic Readout, Fisher Information, Choice Probability, Vestibular System.
+
+%\thispagestyle{empty}
+%\markboth{}{NC instructions}
+%
+%\ \vspace{-0mm}\\
+%
+%Abstract
+\section*{Abstract}
+Most natural task-relevant variables are encoded in the early sensory cortex in a form that can only be decoded nonlinearly. Yet despite being a core function of the brain, nonlinear population codes are rarely studied and poorly understood. To be consistent with known architectural features of the brain, a nonlinear code cannot contain more information than its sensory inputs. Here we provide a theory of nonlinear population codes that obeys this constraint by generalizing recent work on information-limiting correlations \cite{Moreno} in linear population codes. Although these generalized, nonlinear information-limiting correlations bound the performance of any decoder, they also make decoding more robust to suboptimal computation, allowing many suboptimal decoders to achieve nearly the same efficiency as an optimal decoder. Although these correlations are extremely difficult to measure directly, particularly for nonlinear codes, we provide a simple, practical test by which one can use choice-related activity in small populations of neurons to determine whether decoding is limited by correlated noise or by downstream suboptimality. Finally, we discuss simple sensory tasks likely to require approximately quadratic decoding, to which our theory applies.
+%%%%%%%%%%%
+
+
+\section{Introduction}
+
+%Perception is hard because task-relevant variables are generally ambiguous and rarely directly observable in sense data. Instead, sensory inputs are typically influenced also by irrelevant variability, often called nuisance variables, that must be disentangled from the relevant variables.
+
+%This variability may arise from the external world. For example, to choose a ripe apple at sunset, we must discount the reddish light to identify the surface as red. It may arise from dynamic state changes within the brain. It may also arise from a combination of internal and external factors, such as from stimulus-dependent fluctuations in other neurons lying outside the classical receptive field. In any case, removing nuisance variables generally requires the brain to transform its sense data nonlinearly.
+
+This study is motivated by three observations: 1) Neural computation is fundamentally nonlinear. 2) Computation is distributed across many neurons. 3) The information we measure in neuroscience experiments may or may not drive behavior. In this study we use these three observations to provide mathematical tools that can reveal which components of distributed nonlinear codes are actually used by an animal's brain.
+
+When mean neural responses are well-tuned to a stimulus of interest, it is easy for an animal to use their information. For instance, in binary discrimination tasks, a decision can be reached simply via a linear weighted sum of neural responses. Although correlated variability will affect the quality of the code, local learning rules can find synaptic weights that select the patterns with highest signal-to-noise ratio. However, if linear computation were sufficient in natural conditions, then we wouldn't need a brain: we could wire our sensors directly to our muscles and skip the brain, while accomplishing the same linear computation. Thus all interesting perceptual computations are nonlinear.
+
+In fact, neurons are rarely tuned to precisely one task variable, and natural variation in other sensory stimuli will influence neural responses. This can dilute or even abolish the mean tuning to the relevant stimulus, while increasing the response diversity. Similarly, trial-to-trial variability in internal neural properties such as top-down contextual modulation, brain state, or response adaptation can also change the apparent tuning and variability of neurons. In such cases, the brain can no longer use a linear computation, and we can not understand neural processing of natural stimuli using linear models.
+
+Neural computation is also distributed, and combines overlapping information from many neurons. Since the number of neurons in the brain is much larger than the number of its sensory inputs, the distributed neural code is highly redundant: the brain cannot have more information than it receives. This basic mathematical fact has crucial implications for the structure of computation.
+
+Despite the clear importance of computation that is both nonlinear and distributed, and compelling evidence for  nonlinear coding in the cortex \cite{kohn2005stimulus,averbeck2006effects,ohiorhenuan2010sparse}, most neuroscience descriptions of distributed computation have assumed linear codes. The few that directly address nonlinear population codes either have an impossibly large amount of encoded information \cite{shamir2006implications,ecker}, have abstract structure unrelated to useful computations on any task \cite{babadi2014sparseness}, or are long sequences of generic nonlinearities \cite{riesenhuber1999hierarchical,anselmi2013unsupervised,dicarlo2007untangling,yamins2014performance} whose computational efficiency in particular tasks remain poorly understood.
+
+Finally, just because a neural population encodes information, it does not mean that the brain decodes it all. Encoding specifies how the neural responses relate to the stimulus input; similarly, decoding specifies how the neural responses relate to the behavioral output. To understand the brain's computational strategy we must understand how encoding and decoding are related.
+
+In particular, efficient computation requires that all of the encoded information is successfully decoded. Directly checking this is difficult, because it requires a complete assessment of potentially large neural populations.\footnote{Checking $J_{\rm tot}=J_{\hat{s}}$ requires knowing $J_{\rm tot}$ which is not tractable.} Conveniently, however, there are other more easily testable consequences of efficient decoding of neural activity. To identify what the brain computes, we can use correlations between behavior and neural responses to distinguish which computations the brain uses \cite{haefner2013inferring,pitkowHow}.
+
+
+Describe three types of correlations: signal, noise, and nuisance. Signal is: vary everything. Noise is: hold all stimuli fixed. Nuisance is in between, and is the typical case. Of cours it is task dependent.
+
+
+
+\section{Results}
+
+The population response of $N$ neurons to a stimulus $s$ is a vector of spike counts $\vr$ in some given time windows. This population response reflects both {\it signal} and {\it noise}. Conventionally in neuroscience, the signal is often thought to be the stimulus dependence of the average response, i.e. the tuning curve. We will broaden this definition to allow the signal to include any stimulus-dependent statistical property of the population response.
+
+We consider the coding of a particular stimulus variable, $s$, while allowing other properties to vary freely. This may include other task-irrelevant stimulus parameters, noise, or internal brain states. This contrasts with another common perspective that defines the stimulus as the complete set of sensory inputs, so that there are no external nuisance variables for the neural responses. More here.
+
+We say that a population code is linear if all relevant signal about the stimulus is present in the first-order statistics of neural responses, $\vf(s)=\la \vr|s\ra$. If any of the relevant signal can be found only in higher-order statistics of the neural responses, then we say that the code is nonlinear. One justification for this terminology is that for a linear code, all (Fisher) information can be extracted from a linear function of the neural responses,
+\begin{align}
+\sh=\vw\cdot\vr+c
+\end{align}
+where $\vw$ is the effective decoding weight on each neuronal response (Methods).
+
+In contrast, for a nonlinear code, some of the information can only be extracted with nonlinear functions of the neural responses. In other words, we say that a code is linear or nonlinear depending on whether the sufficient statistics for the stimulus is a linear or nonlinear function of the neural responses. In the Methods section, we make this definition mathematically precise.
+
+A nonlinear code is simply one in which all information about a stimulus can only be decoded by nonlinear operations. It is also illuminating to take a statistical view: unlike a linear code, the information is not encoded in mean neural responses but instead by higher-order statistics of responses $p(\vr|s)$. These functional and statistical views are naturally linked because estimating these statistics requires nonlinear operations. For instance, information from a stimulus-dependent correlation $\la\vr\vr^\top|s\ra$ can be decoded by quadratic operations $\vr\vr^\top$ \cite{shamir2006implications}.
+
+Various experimental studies have found evidence for a nonlinear code, even with externally identical stimuli, by observing stimulus-dependent correlations \cite{kohn2005stimulus,averbeck2006effects,ohiorhenuan2010sparse}. Other experiments have turned up evidence for nonlinear population codes by characterizing the nonlinear selectivity directly \cite{rigotti2013importance,pagan2014dynamic,yamins2014performance}.
+
+A confusing but absolutely critical property of nonlinear codes is that some so-called `noise correlations' actually count as signal. This happens whenever the statistical pattern of trial-by-trial fluctuations depends on the stimulus, and thus contain information. A stimulus-dependent (`noise') covariance would count as a signal, and irrelevant variability of that covariance would count as noise.
+
+A simple example of a nonlinear code is the XOR problem. Given the responses of two binary neurons, $x$ and $y$, we would like to decode the value of a task-relevant signal $z={\rm XOR}(x,y)$:
+\be
+\begin{array}{c|cc}
+y\backslash x&0&1\\
+\hline
+0&{\bf 0}&{\bf 1}\\
+1&{\bf 1}&{\bf 0}
+\end{array}
+\ee
+We don't care about the specific value of $x$ by itself, and in fact $x$ alone tells us nothing about $z$. The same is true for $y$. The signal is actually reflected in the trial-by-trial {\em correlation} between $x$ and $y$: when they are positively correlated then $z=0$, and when they are anti-correlated then $z=1$. A continuous version of such a purely nonlinear code is a gaussian with stimulus-dependent covariance but a stimulus-independent mean.
+
+Ultimately, the brain must untangle the nonlinear code at its input. All information available for behavior is present at the sensory input, but it is not formatted conveniently for driving behavior. A popular notion of accessible information is linear decodability, because neurons can often be modelled as performing a linear sum of their inputs. Indeed, after multiple stages of sensory processing, information about object identity does indeed become linearly decodable \cite{DiCarlo;Yamins}.
+
+
+%{\bf Nuisance variables} are task-irrelevant variables that change the relationship between sense data and the task-relevant stimulus. Examples include the illumination spectrum in color discrimination, size and position for object recognition, orientation or pose for face identification, or pitch for (non-tonal) speech recognition. Nuisance variables can diminish or abolish neural tuning to a task-relevant stimulus, relegating the signal to higher-order patterns, and creating a nonlinear code.
+
+
+
+
+\subsection{Choice correlations and decoding}
+
+Just as some neural activity reflects sensory inputs, some activity reflects an animal's behavioral output or choice \cite{Britten}. However, interpretation of this choice-related activity is generally confounded by correlations between neurons, since a neuron that has no impact on behavior may be correlated with a choice because it is correlated with another neuron that does drive behavior \cite{haefner}. In principle, we could discount such indirect relationships with complete recordings of all neural activity. In practice, this is of course impractical, and even if we could record from all neurons simultaneously, data limitations would prevent us from fully disambiguating how neural activities directly influence behavior.
+
+To understand key principles of neural computation, however, we may not care about all detailed patterns of synaptic weights. Instead we may want to know certain properties of the brain's strategies. One important such property is the efficiency with which the brain decodes available neural information as it generates an animal's choices.
+
+Conveniently, testable predictions about choice-related activity can reveal the brain's decoding efficiency, in the case of linear codes \cite{pitkow}. Next we review these predictions, and then generalize them to nonlinear codes.
+
+In discrimination or estimation tasks, an animal is rewarded for guessing the stimulus $s$ correctly. This guess or choice depends directly on a perceptual estimate of a stimulus, $\sh$, so here we use $\sh$ as a proxy for choice. We then define `choice correlation' $C_{r_k}$ as the correlation coefficient between the response $r_k$ of neuron $k$ and the choice $\sh$:
+\begin{align}
+C_{r_k}={\rm Corr}(r_k,\sh|s)
+\end{align}
+given a fixed stimulus $s$. This is a more convenient simplification of the traditional measure of choice probability \cite{Britten}, with almost identical properties \cite{pitkow}. (If we are careful to control for the direct effect of the stimulus on the responses and choices, then we can allow $s$ to vary and compute the {\it partial} correlation between $r_k$ and $\hat{s}$ \cite{Maunsell}.)
+
+Intuitively, if an animal is decoding its neural information efficiently, then neurons encoding more information should be more correlated with the choice. Mathematically, one can show that choice correlations indeed have this property when decoding is optimal \cite{pitkow}:
+\begin{align}
+	C_{r_k}^{\rm opt}=\sqrt{\frac{J_{r_k}}{J}}
+	\label{eq:CCoptlin}
+\end{align}
+where $J$ and $J_{r_k}$ are the Fisher Information of the animal's choice and of neuron $k$'s response $r_k$, respectively (Methods). The Fisher information is a local measure of the signal-to-noise ratio, and bounds the inverse variance of any unbiased estimator: higher information means lower variance.
+
+This relationship hold for optimal linear decoding, regardless of the structure of noise correlations. When there are noise correlations, directly comparing the animal's information to the information in its neural population can be very challenging, and requires one to measure simultaneous responses of a large fraction of all relevant neurons. In contrast, the optimality test (\ref{eq:CCoptlin}) requires measuring only single neuron responses, which is a useful property given the difficulty of directly measuring the information by recording simultaneously from all neurons in a cortical population.
+
+For a purely nonlinear code, in which mean neuronal responses are not tuned to the stimulus, we may well find that a single neuron has zero choice correlation and no information about the stimulus. The test would thus be inconclusive. However, we can construct a very natural generalization of the above results for linear codes, which can reveal the quality of neural computation on nonlinear codes. We simply define a `nonlinear choice correlation' for a richer, nonlinear set of relevant variables,
+\be
+C_{R_k}={\rm Corr}(R_k(\vr),\sh|s)
+\label{eq:CCdef_nonlin}
+\ee
+where $R_k(\vr)$ would be a nonlinear function of the neural responses. If the brain optimally decodes the information encoded by this statistic, then the nonlinear choice correlation satisfies the equation
+\be
+C_{ij}^{\rm opt}=\sqrt{\frac{J_{R_k(\vr)}}{J}}
+\label{eq:CCoptnonlin}
+\ee
+where $J_{R_k(\vr)}$ is the Fisher information in the particular nonlinear combination $R_k(\vr)$ of neural responses (Methods).
+
+For example, consider a purely quadratic code, in which the response covariance $\Sigma(s)=\la\vr\vr^\top|s\ra-\vf\vf^\top$ depends on the stimulus, but the mean $\vf=\la\vr|s\ra=\la\vr\ra$ does not. In this case, optimally decoded neurons would have no linear correlation with behavioral choice. Instead, the choice should be driven by the product of firing rates, $\vR={\rm vec}(\vr\vr^\top)$, where $\rm vec()$ is the vectorization operation that flattens an array into a one-dimensional list of numbers (without repetition). Figure \ref{fig:nonlinearCCs} shows linear and nonlinear choice correlations for pairs of neurons, defined as $C_{ij}={\rm Corr}(\sh,r_ir_j)$. When decoding is linear, linear choice correlations are strong while nonlinear choice correlations are near zero (Figure \ref{fig:nonlinearCCs}A,B). When the decoding is quadratic, here mediated by an intermediate layer that multiplies pairs of neural activity, the nonlinear choice correlations are strong while the linear ones are insignificant (Figure \ref{fig:nonlinearCCs}C,D). Furthermore, the choice correlations are matched to the information content of each pair when decoding is optimal, but not when decoding is suboptimal, as predicted by Eqs (\ref{eq:CCoptlin}--\ref{eq:CCoptnonlin}) (Figure \ref{fig:nonlinearCCs}E,F). This test for optimal quadratic decoding requires only pairwise recordings from a behaving animal.
+
+
+
+\begin{figure}[hbtp]
+  \centering
+  \includegraphics[width=3.5in]{Figures/LinearVSNonlinearCCs2.pdf}
+  \caption{Linear and nonlinear choice correlations successfully distinguish network structure. A linearly decoded population ({\bf A}) produces nonzero linear choice correlations ({\bf B}), while the nonlinear choice correlations are randomly distributed around zero. The situation is reverse for a nonlinear network ({\bf C}), with insignificant linear choice correlations but strong nonlinear ones ({\bf D}). Here the network implements a quadratic nonlinearity, so the relevant choice correlations are quadratic as well, $C_{jk}={\rm Corr}(r_jr_k,c)$. ({\bf E,F}) {\color{red} Optimal vs Suboptimal Figure here.}}
+  \label{fig:nonlinearCCs}
+\end{figure}
+
+
+
+\subsection{Redundant codes}
+
+One might question the utility of this optimality test for several reasons. It might seem unlikely that the brain is strictly optimal. Even if the brain were optimal, for high-order statistics there are an enormous number of ways to combine neural responses, so the information content in any one statistic could be tiny compared to the total information in all of them. The ratio \ref{eq:CCoptnonlin} would be tiny, indistinguishable from zero with reasonable amounts of data. Past studies have reported that nonlinear codes have extensive information that grows proportionally with the number of neurons \cite{shamir2006implications,ecker2011effect}. This would indeed imply immeasurably small choice correlations for large, optimally decoded populations.
+
+The resolution to these concerns is information-limiting correlations \cite{}. Since cortical populations are much larger than the number of sensory inputs, these past studies seems to imply that the cortex could have much more information than the sensory periphery. Clearly, some assumption of these models is unrealistic.
+
+Their problem lies in isolating the population code from the neurons that provide its input. These models neglect nonlinear variant of bad noise that we have recently described \cite{Yang2015Nonlinear}.
+
+
+
+The problem lies in the assumed correlations. When a network inherits information from a smaller input population, noise in the input is processed by the same pathway as the signal, and this generates correlations that cannot be averaged away. Thus these noise correlations will bound the efficiency of decoding to match the information in the input layer \cite{Moreno}. This information-limiting noise can ultimately be referred back to the stimulus, and appears in the quadratic code as $\vr\sim N(\vf,\Sigma(s+ds))$ where $ds\sim N(0,\epsilon)$. To a first approximation, this noise changes the covariance of the quadratic sufficient statistics $\vT$ according to
+\be
+\Gamma={\rm Cov}(\vT|s)=\Gamma_0+\epsilon\la\vT\ra'{\la\vT\ra'}^\top
+\ee
+where $\Gamma_0$ is any other covariance matrix which does not limit quadratic information in the limit of large populations.
+
+When these information-limiting correlations are present, the Fisher information in the output will be bounded by $J=\frac{1}{\epsilon+1/J_0}$, where $\epsilon$ is the variance of information-limiting correlation, and$J_{0}$ is the Fisher information of the output in the absence of information-limiting correlations. When the population size grows, the unlimited information term $J_{0}$ grows rapidly, so the output Fisher information will be dominated by $\epsilon$. This is true for both optimal decoding and many forms of suboptimal decoding. We also show that the relative efficiency of different suboptimal quadratic decoders is higher in the presence of information-limiting noise.
+
+
+However, in the presence of bad noise, the dimensions of $\vR$ will not be independent. In such case, it will be essentially impossible to uniquely identify which specific neural response patterns within $\vR$ best account for the behavior: many other patterns will be redundant with them \cite{pitkowHow}, and so choosing between them does not provide any computational insight.
+
+Nonetheless, not all patterns will be indistinguishable, and we can still identify particular subsets of sufficient statistics that are required to predict the behavioral output. We have previously used this technique in a linear model with a generalization of information-limiting noise, to distinguish the decoding weights given to separate brain areas without specifying the decoding weights of individual neurons \cite{LakshminarasimhanInfluence,lakshminarasimhanDissecting}.
+
+In realistically redundant models that have more cortical neurons than sensory neurons, many decoders should be near-optimal, as we recently discovered in experimental data \cite{pitkowHow}.
+
+This measure is strongly influenced by the structure of variability that is correlated across the population \cite{Abbott1999}. In particular, certain patterns of correlations between responses conditioned on the stimulus $s$ limit the information \cite{zohary1994,moreno:2014information,GrabskaBarwinska,kanitscheider}.
+
+
+
+\subsection{Which nonlinearity?}
+
+For efficient decoding, the optimality test (\ref{eq:CCoptnonlin}) is necessary but not sufficient. Only if the test is passed for all statistics will the test be conclusive. For an extreme example, a single neuron might pass the test, but if other neurons don't, then the brain is not using its information well. On a broader scale, one might find that all individual responses $\vr$ pass the optimality test, while products of responses ${\rm vec}(\vr\vr^\top)$ fail. This would imply that  linear information is used well while quadratic information is present but unused (Figure \ref{}).
+
+
+
+
+
+
+
+{\bf Which nonlinearities to consider?} One sensible strategy is an expansion in powers of $\vr$. We may consider powers of neural responses up to the number of neurons we record, such that the highest order interaction would be $\prod_i r_i$. This approach is akin to using a Taylor series expansion of the neural nonlinearities, $\{r_i,\ r_ir_j,\ r_ir_jr_k,\ \ldots\}$, to approximate the sufficient statistics $\vR$ that the brain assumes in decoding the stimulus. We will also consider other sets of nonlinearities, such as radial basis functions, random forests \cite{}, random nonlinearities \cite{raju2015marginalization,rigotti2010internal,rigotti2013importance}, or nonlinear features learned in deep discriminative networks \cite{dicarlo2007untangling,patel2015probabilistic}.
+
+These expansions need not exactly match those used by the brain. As long as they can approximate the real nonlinearities then we can still find the effective nonlinearity (Figure \ref{fig:effectivenonlinearity}). This insensitivity to fine details of neural nonlinearities, and sensitivity to the computational form of the nonlinearities, is a benefit of modeling computation in the informational space, rather than trying to model individual neural nonlinearities.
+
+
+
+
+
+
+\subsection{Inferring the effective nonlinearity}
+
+If decoding is not optimal, the test (\ref{eq:CCoptnonlin}) will not be satisfied. Of course we would still like to learn how the brain does use its nonlinear information. The brain might invoke the best nonlinear transformations but weigh its outputs suboptimally, or it might not use the right nonlinearity. In fact, we can measure both kinds of suboptimality in one unified analysis.
+
+We concatenate a list of potential nonlinearities $\vR(\vr)$ and compute nonlinear choice correlations for each of them, $\vC_\vR$. We also need to compute the noise covariances $\Gamma$, either directly from large-scale population recordings, or approximated using a model capturing main trends in multiple small-scale recordings \cite{ganmor2011sparse,ohiorhenuan2010sparse,cohen2011measuring,chen2013functional,kanitscheider2015measuring,ecker2011effect,liu2013choice,yatsenko2015improved}. We can then infer the decoding weight given to each of these nonlinear contributions according to
+\begin{equation}
+	\vw\propto\Gamma^{-1}\gamma\vC_\vR
+	\label{eq:infernonlinearity}
+\end{equation}
+where $\gamma_{ij}=\Gamma_{ii}^{1/2}\delta_{ij}$ is a diagonal matrix of noise standard deviations for $\vR$. The result describes the behavioral output as a weighted sum of different nonlinear contributions.
+
+
+
+\begin{figure}[1][hbt]
+  \centering
+  \includegraphics[width=2.3in]{Figures/EffectiveNonlinearity.pdf}
+  \caption{Model for how an effective nonlinearity can replicate the true nonlinearity. The true nonlinearity is one function, $\vT(\vr)$, and it is decoded according to some weights $\vW$. We plan to infer an approximation to the function $\vW\cdot\vT(\vr)$ by a linear combination $\vV\cdot\vR(\vr)$ of other nonlinearities. We can compute the nonlinear choice correlations for these latter nonlinearities $\vR$ using (\ref{eq:infernonlinearity}).}
+  \label{fig:effectivenonlinearity}
+\end{figure}
+
+
+
+
+
+\section{Methods}
+
+Definition of signal and noise. Note that some statistics are redundant, for example, mean and covariance of a Poisson-distributed response.
+
+Linear model. Many neural responses have been described as a member of the exponential family with linear sufficient statistics,
+\be
+p(\vr|\vs)=\frac{1}{Z}e^{\vh(\vs)\cdot\vr+g(\vs)}
+\ee
+where $\vr$ are linear sufficient statistics for the parameter $\vs$, which is the stimulus that generated the response.
+
+This model may fail when there are other variables that influence the neural responses but are irrelevant for the task.
+
+To generalize this model to the more naturally relevant nonlinear case, we assume the response distribution is given by a member of the exponential family with nonlinear sufficient statistics,
+\be
+p(\vr|\vs)=\frac{1}{Z}e^{\vH(\vs)\cdot\vR(\vr)+G(\vs)}
+\ee
+where $\vR(\vr)$ is a vector of sufficient statistics for the parameter $\vs$.
+
+Estimation and inference are closely connected in the exponential family. If the neural responses provide linear sufficient statistics about the stimulus, $p(\vr|s)\propto e^{\vh(s)\cdot\vr}$, then local estimation is also linear, with weights $\vw=\vh'(s)/J$. This holds under the condition that any trial-by-trial fluctuations in uncertainty are small compared to the average uncertainty.
+
+
+
+
+\subsection{Quadratic coding model}
+
+We consider a population of $N$ neurons that code for a scalar stimulus $s$. The response of the $i$th neuron is given by $r_i=f_i(s)+\eta_i(s)$, where $f_i(s)$ is the tuning curve of neuron $i$ and $\eta_i$ reflects the trial-to-trial variability in the neural responses. The variability is assumed to follow a multivariate normal distribution with zero mean $\langle\veta\rangle=0$ and stimulus-dependent noise covariance, $\Sigma(s)=\la\veta\veta^\top\ra$.
+
+In order to isolate the coding properties of a purely nonlinear neural code, we assume that the tuning curve is constant, while the noise covariances $\Sigma_{ij}(s)$ depend smoothly on the stimulus. We then quantify the information content of the neural population using the Fisher information $J$.
+
+According to this model, the distribution of neural responses is described by the exponential family with quadratic sufficient statistics, $\vT(\vr)=(\ldots,r_ir_j,\ldots)$, and $p(\vr|s)\sim\exp{[\vH(s)^\top\vT(\vr)]}$ where $\vH(s)$ is a vector of parameters with the same dimension as $\vT$. For response distributions drawn from this family, the stimulus can be estimated efficiently using a quadratic decoder.
+
+\subsubsection{Constructing covariance}
+
+As one example quadratic code, we build a covariance that rotates with the stimulus $s$.
+
+Consider an antisymmetric matrix $A=-A^\top$ with pure imaginary eigenvalues such that $V(s)=\exp{As}$ is a rotation matrix. Then take $\{\omega_k\}$ and $\{\vu_k\}$ as eigenvalues and eigenvectors of $A$, comprising matrices $\Omega$ and $U$ respectively. Then consider a diagonal matrix of variances $\Lambda$ that is independent of $s$. Our final stimulus-dependent covariance $\Sigma(s)=V(s)\Lambda V(s)^\dagger$. Finally, the derivative is
+\begin{align}
+\Sigma'(s)=Ue^{\Omega s}(\Omega X-X\Omega)e^{-\Omega s}U^\dagger
+\end{align}
+where $X=U^\dagger\Lambda U$. This ensures that we can make the bad noise as large as we like without losing positive-definiteness.
+
+
+
+
+
+
+
+
+
+\subsection{Fisher information}
+
+To quantify the information content of a nonlinear population code, we use the Fisher information. As before, this specifies the local signal-to-noise ratio, but now for nonlinear signals. We assume the neural responses fall approximately in the exponential family, but now with nonlinear sufficient statistics $\vR(\vr)$ instead of just the linear sufficient statistics $\vr$ used in previous work. In the nonlinear family, the stimulus determines the neural responses according to the distribution $p(\vr|s)\propto e^{\vH(s)\cdot\vR(\vr)}$.
+
+For the exponential family with nonlinear sufficient statistics $\vR(\vr)$, the Fisher information is given by $J=\vF'^\top\Gamma^{-1}\vF'$ \cite{beck2011insights}. Here I have defined $\vF$ and $\Gamma$ to be the mean and covariance of the relevant nonlinear sufficient statistics $\vR$ of the neural responses, for a given stimulus. These quantities are directly analogous to a tuning curve (signal) and correlations (noise) in the linear case. Note that what serves as signal in the nonlinear setting would have been considered purely noise in a linear code! For example, in a purely quadratic code with zero mean response, so that $\vR=\vr\vr^\top$, the signal is the stimulus-dependent response covariance $\vF=\la\vr\vr^\top|s\ra$ (which would usually be classified as noise correlations), and the real noise is a fourth-order quantity, $\Gamma_{ijkl}=\la r_ir_jr_kr_l|s\ra$. For multidimensional stimuli $\vs$, the Fisher information becomes a matrix, $J=\nabla_{\!\vs}\vF^\top\Gamma^{-1}\nabla_{\!\vs}\vF$, and its inverse bounds the covariance matrix of an unbiased estimator.
+
+It would be quite difficult to directly quantify the information content in a large nonlinear population code with the extensive information predicted by current models of population codes \cite{shamir2006implications,ecker2011effect,josic2009stimulus}. This would require measuring all contributing higher-order correlations and their stimulus dependence. That would demand lots of data from many neurons. However, for nonlinear codes with limited information, we can provide a practical test by which one can use choice-related activity in small subsets of neurons to determine whether performance is limited by correlated noise or by downstream suboptimality.
+
+
+\subsection{Limited information}: Recall that previous models of nonlinear codes had more information than could be present in their input \cite{shamir2006implications,ecker2011effect,josic2009stimulus}. We can provide a mathematically valid theory of nonlinear population codes that does not violate this constraint (Figure \ref{fig:badnoise}A--B). Now that we have established a natural mathematical framework for nonlinear population codes, it is straightforward to generalize our recent work on information-limiting correlations \cite{moreno:2014information}. To a first approximation, the nonlinear information-limiting noise appears in the covariance of the sufficient statistics $\vR(\vr)$ as
+\be
+\Gamma={\rm Cov}(\vR(\vr)|s)\approx\Gamma_0+\epsilon\vF'\vF'^\top
+\label{eq:nonlinearbadnoise}
+\ee
+where $\Gamma_0$ is any other covariance matrix that does not limit nonlinear information in the limit of large populations. Comparable formulae hold for multidimensional stimuli. For locally optimal nonlinear decoding of $s$, (\ref{eq:nonlinearbadnoise}) is the {\it only} noise pattern that limits information.
+
+
+Although these generalized, nonlinear information-limiting correlations bound the performance of any decoder, they also make decoding more robust to suboptimal computation, allowing many suboptimal decoders to achieve nearly the same efficiency as an optimal decoder (Figure \ref{fig:badnoise}C).
+
+
+
+\subsection{Application to neural data}
+
+We recently applied this formula to data recorded from primate visual cortex (V1 and V4), in collaboration with the lab of Valentin Dragoi, and found surprisingly supportive results. Monkeys were asked to indicate if a second presentation of a natural image was rotated compared to its first presentation. The particular natural images differed over blocks (e.g. tree, face, mountain), so image identity serves as a nuisance variable, and decoding requires nonlinear computation. Our initial analysis shows that neural pairs that have stronger nonlinear information also have stronger correlation with the choice, just as predicted by optimal decoding (Figure \ref{fig:dragoidata}). Although this is enticing evidence, more analysis and controls must be done to demonstrate optimality persuasively, by quantifying measurement uncertainty and controlling the nuisance variables. Most importantly, we want to do model comparison against a more general, suboptimal decoder, discussed next.
+
+
+\begin{figure}[hbtp]
+  \centering
+  \includegraphics[width=3.3in]{Figures/DragoiData.pdf}
+  \caption{Nonlinear choice correlations in primate visual cortex are consistent with optimal nonlinear decoding. There is significant nonlinear information (horizontal axis), and the nonlinear choice correlation (vertical axis) is strongly correlated with the predictions of (\ref{eq:CCoptnonlin}). Data points are computed from electrophysiological recordings of area V1 and V4 in two macaques (blue and tan dots) during a rotation-detection task. Unpublished data courtesy of Valentin Dragoi.}
+    \label{fig:dragoidata}
+\end{figure}
+
+
+
+
+
+
+
+\section{Discussion}
+
+More generally, which nonlinearities should we use in our test? If all information in $\vr$ is decoded optimally, then all CCs for any function of $\vr$ should also show optimal decoding ({\color{red}Figure}). Yet for the wrong or incomplete nonlinearities that do not fully disentangle the task-relevant variables from the rest, the test may be inconclusive just as it was for linear decoding of a nonlinear code: the chosen nonlinear functions may have little linearly decodable information and correspondingly little choice correlation. The optimal nonlinearities would essentially solve the task starting from the recorded neural responses. Thus for very hard tasks like recognizing object from images with many nuisance variables, the relevant nonlinearities are extremely complex, and the proposed test will not be useful. Instead, the best place to apply this test is in tasks of modest complexity but still of fundamentally nonlinear structure. Some interesting examples where our test would have practical relevance include motion detection using photoreceptors \cite{Poggio}, visual search with distractors (XOR-type tasks) using Inferotemporal Cortex signals \cite{Rust}, sound localization in early auditory processing before the inferior colliculus \cite{}.
+
+Other people have used what is effectively a nonlinear choice correlation in their work: Logiaco et al 2015. Spatiotemporal Spike Coding of Behavioral Adaptation in the Dorsal Anterior Cingulate Cortex. PLOS Biology. Uses a nonlinear choice correlation ($|r-r^*|$) to predict reaction time behavior from dACC: "Deviations from prototypical temporal firing patterns better predict response times."
+
+
+\subsection{Origin of nonlinear codes}
+
+We consider noise to be any variability around that signal, regardless of its origin. We can talk about {\em internal} noise, which would be variability generated by the brain, or {\em external} noise, such as task-irrelevant properties that affect the sensory representation (aka nuisance variables).
+
+
+\subsection{Generating nonlinear codes}
+
+Exponential family: $p(\vx)=e^{Q(\vx)}/Z$.
+\be
+Q(\vx)=\sum_m^M \sum_{\vq:\sum_k q_k=m}a_\vq \prod_k x^{q_k}
+\ee
+
+
+\subsection{Cubic codes}
+
+We can approximate a 3D cubic code with purely $x_ix_jx_k$ components (and a normalization term $-|\vx|^4$) as a mixture of gaussians.
+\begin{align}
+p(\vx|s)&=\tfrac{1}{Z}\exp{\left(-|\vx|^4+\gamma sx_ix_jx_k\right)}\\
+&\approx\sum_{a=1}^4 p(a)p(\vx|a)\\
+&=\sum_a \frac{1}{4}\mathcal{N}(\vx|\mu_a,\Sigma_a)
+\label{eq:mixture3d}
+\end{align}
+where
+\be
+\mu_a=\frac{s}{\sqrt{1+s^2}}\vv_a
+\ee
+and
+\be
+\Sigma_a=\frac{1}{(1+s^2)^2}(I+s^2\vv_a\vv_a^\top)
+\ee
+The vectors $\vv_a$ reflect the four corners of the tetrahedron, $v_{a,i}=\pm 1$.
+
+This distribution is constructed to have zero mean and identity covariance, but a nontrivial skewness tensor. This distribution qualitatively matches the corresponding distribution for the true exponential family distribution with cubic sufficient statistics (Figure \ref{fig:cubicdistributions}).
+
+\begin{figure}[hbtp]
+  \centering
+  \includegraphics[width=6in]{Figures/CubicDistributions.pdf}
+  \caption{Multivariate skewed distributions. ({\bf A}) Isoprobability contour of an exponential family distribution with cubic statistics in three dimensions, drawn from $p(\vr)\propto \exp{(-\|\vr\|^4+sr_1r_2r_3)}$. ({\bf B}) Isoprobability contour for a mixture of four gaussians (Eq \ref{eq:mixture3d}). ({\bf C,D}) Samples drawn from the mixture form, with $s=1,2$.}
+    \label{fig:cubicdistributions}
+\end{figure}
+
+In higher dimensions, the true joint distribution in the exponential family with purely heterogeneous cubic sufficient statistics ($x_ix_jx_k$ for distinct $i,j,k$) can be factorized over cliques of size 3:
+\be
+p(\vx)=\prod_\alpha p(\vx_\alpha)
+\ee
+If we substitute for each clique the mixture-of-gaussians in the clique subspace, we obtain
+\be
+p(\vx)=\prod_\alpha \sum_{a_\alpha}p_\alpha(a_\alpha)p_\alpha(\vx_\alpha|a_\alpha,\gamma_\alpha(s))
+\ee
+where $\gamma_\alpha(s)$ is the natural parameter for that clique. This involves $4^{|\valpha|}$ mixture components:
+\be
+p(\vx)=\sum_{\va}p_\va(\va)\prod_\alpha p_\alpha(\vx_\alpha|a_\alpha,\gamma_\alpha(s))
+\ee
+
+To sample from this distribution, we can choose a mixture component for each clique,  combine the corresponding gaussians into one global gaussian, and sample from this gaussian. This requires combining the densities
+\begin{align}
+p(\vx|\va)&=\prod_\alpha p_\alpha(\vx_\alpha|a_\alpha)\\
+&=\exp{\left(-\frac{1}{2}\sum_\alpha (\vx-\vmu_{a\alpha})^\top\Sigma_{a\alpha}^{-1}(\vx-\vmu_{a\alpha})\right)}
+\label{eq:conditionalDensity}
+\end{align}
+Each inverse covariance is given by
+\begin{align}
+\Sigma^{-1}_{a\alpha}&=\left(\frac{1}{(1+s^2\gamma_\alpha^2)^2}\left(I+s^2\gamma_\alpha^2\vv_a\vv_a^\top\right)\right)^{-1}\\
+&=(1+s^2\gamma_\alpha^2)^2\left(I-\frac{s^2\gamma_\alpha^2\vv_a\vv_a^\top}{1+s^2\gamma_\alpha^2\vv_a^\top\vv_a}\right)
+\end{align}
+in the clique subspace, where we used the Sherman-Morrison formula, and substituted $s\to s\gamma_\alpha$ everywhere to account for the natural parameter of each clique skewness. Note that $\vv^\top\vv=3$ since each clique involves exactly 3 terms. These inverse covariances are expressed in the clique subspace, but we need to compute them in the full space for all $\vr$. In this full space, the inverse covariances are zero except for indices in the corresponding clique subspace of $\alpha$.
+
+To compute the full conditional distribution $p(\vx|\va)$, we need to compute the mean and covariance.
+\be
+p(\vr|\va)=\mathcal{N}(\vx|\vm,S)
+\ee
+From (\ref{eq:conditionalDensity}), we have
+\be
+S^{-1}=\sum_\alpha \Sigma_\alpha^{-1}
+\ee
+and
+\be
+\vm=S\sum_\alpha \Sigma_\alpha^{-1}\mu_\alpha
+\ee
+Note that we can simplify $\Sigma_\alpha^{-1}\mu_\alpha$:
+\begin{align}
+\Sigma_\alpha^{-1}\mu_\alpha
+&=(1+s^2)^2\left(I-\frac{s^2\vv\vv^\top}{1+s^2\vv^\top\vv}\right)\frac{s}{\sqrt{1+s^2}}\vv\\
+&=\frac{s(1+s^2)^{3/2}}{1+s^2\vv^\top\vv}\vv\\
+&=\frac{s(1+s^2)^{3/2}}{1+3s^2}\vv
+\end{align}
+where I have suppressed the $\gamma_\alpha$ and the $a$ and $\alpha$ subscripts for clarity. Putting back the $\gamma$ factors,
+\be
+\vm=S\sum_\alpha \frac{s\gamma_\alpha(1+s^2\gamma_\alpha^2)^{3/2}}{1+3s^2\gamma_\alpha^2}\vv_\alpha
+\ee
+
+Which set of $\alpha$ should we choose? We'd naturally assume we'd use the actual cliques from the factor graph. However, this leads to the problem that there is an overcounting of the stimulus-independent normalization term. We want this term to be
+\be
+p(\vx|s)=e^{-|\vx|^4}\prod_\alpha \psi_\alpha(\vx)
+\ee
+with the normalization $e^{-|\vr|^4}$ and $\psi_\alpha(\vx_\alpha)=\gamma_\alpha(s)x_{\alpha_1}x_{\alpha_2}x_{\alpha_3}$. However, the product of 3D cubic distributions that we approximated with the Mixture-of-Gaussians gives instead
+\be
+p(\vx|s)=\prod_\alpha p_\alpha(\vx_\alpha)=e^{-\sum_\alpha |\vx_\alpha|^4}\prod_\alpha \psi_\alpha(\vx)
+\ee
+which therefore has the normalization
+\be
+e^{-\sum_\alpha |\vx_\alpha|^4}
+\ee
+and this overcounts some quartic terms. We can equalize this by including all possible factors, but where many of the factors have no cubic term ($\gamma_\alpha=0$). This leads to
+\be
+-\sum_\alpha |\vx_\alpha|^4=-\tbinom{n-1}{2}\sum_i x_i^4-\tbinom{n-2}{1}\sum_{ij}x_i^2x_j^2
+\ee
+where the first binomial coefficient accounts for the fact that each node $i$ participates in $\tbinom{n-1}{2}$ other triplets (the number of triangles connecting each node to the $n-1$ other nodes), and each pair $ij$ participates in $\tbinom{n-2}{1}$ other triplets (the number of triangles using that pair as an edge). Note that a term with $gamma=0$ will be spherically symmetric in the clique subspace, and will arise as a mixture of identical gaussians with identity covariance, $\Sigma_\alpha=I$ (and thus identity inverse covariance in the clique subspace). We must therefore add these identity terms to the mixture of gaussians for all cliques without factors.
+
+However, are we still overcounting the quadratic terms? Maybe by including all the terms of the form $x^2y$ and $x^3$ we will allow circular symmetry?
+
+Also, the heterogeneous cubic terms we included here are axis-aligned. How do we make general cubics with tetrahedral symmetry but arbitrary alignment? This is easily accomplished by an arbitrary rotation matrix $A$ applied to the axis-aligned version, $\vr=A\vr'$ with $p(\vr'|s)\sim \tfrac{1}{Z(s)}\exp{[-|\vr'|^4+\sum_{ijk}\gamma_{ijk}(s)r'_ir'_jr'_k]}$. This rotation produces a variety of cubic terms in the exponent.
+
+
+
+We can now sample from the full distribution. For each clique $\alpha$ we randomly sample a cluster $a$ and thus a corresponding direction $\vv_\alpha$. We then compute the mean and covariance of the conditional gaussian distribution $p(\vr|\va)=\mathcal{N}(\vr|\vm,S)$. Then we're done.
+
+
+{\color{red}This mixture-of-gaussians approach should be generalized to cubic terms like $x^2y$ and $x^3$ before using.}
+
+To convert this purely cubic distribution to a distribution with linear and quadratic information, we can simply shift and scale the distribution in a manner dependent on $s$:
+\begin{align}
+\vr&=\vf(s)+\Sigma^{1/2}\vr'\Sigma^{1/2}\\
+\vr'&\sim \tfrac{1}{Z(s)}\exp{[-|\vr'|^4+\sum_{ijk}\gamma_{ijk}(s)r'_ir'_jr'_k]}
+\end{align}
+These affine transformations can be incorporated directly into the lobes of the mixture-of-gaussians,
+\be
+p(\vr|a)=\mathcal{N}(\vr|\vf(s)+\vm_a(s),\Sigma^{1/2}(s)S_a(s)\Sigma^{1/2}(s)
+\ee
+Note that the linear and quadratic information terms are lobe-independent (ie independent of $\va$). The quadratic term can also include the $s$-independent matrix $A$ that arises from re-aligning the axes of the pure heterogeneous cubic term.
+
+
+
+
+\subsection{More}
+
+
+Berkes and Wiskott show method to optimize response of quadratic neuron, subject to energy constraints.
+
+Poggio and Reichart use Volterra expansion to show minimal complexity of neuronal connections needed to implement fly vision. This may be a good historical context for nonlinear processing and effective nonlinearities.
+
+
+From Genevera's paper: "A popular class of univariate distributions is the exponential family, whose distribution for a random variable $Z$ is given by
+$$P(Z) = \exp{(\theta B(Z) + C(Z) - D(\theta))}$$
+with sufficient statistics $B(Z)$, base measure $C(Z)$, and log-normalization constant $D(\theta)$." This means that I should say linear sufficient statistics apply to the likelihood $p(\vr|s)$ with (non-natural) parameters $s$. If I want the posterior $p(s|\vr)$ then I can say that projections of $\vr$ are natural parameters.
+
+Deep nets, challenge of finding reasonable $R$.
+
+The right nonlinear transformations can untangle this nonlinear code, so that the information becomes linearly decodable \cite{riesenhuber1999hierarchical,anselmi2013unsupervised,Bengio,Cox,NotNoisyJustWrong} and decision-making becomes relatively simple.
+
+Unfortunately, many neuroscience experiments are designed without explicit use of nuisance variables. Although this simplifies the analysis, this simplification comes at a great cost, which is that the neural circuits are being engaged far from their natural operating point, and far from their purpose: there is little hope of understanding neural computation without challenging the neural systems with nonlinear tasks for which they are required.
+
+Applicability to cross-time correlation, ie for sound localization.
+
+Recurrence \cite{Wimmer2015}.
+
+Redundancy affects:
+* likelihood of seeing optimal computation
+* subsampling (one kind of suboptimality)
+* reconstruction from redundant sub-groups
+
+If we consider nuisance-induced variation to be `signal correlations', then we are taking the perspective of the experimenter, who knows the true signal. (And it's awkward to say signal-dependent signal correlations.) If we consider these to be `noise correlations' then we are taking the perspective of the animal, who does not know these nuisance variables. Maybe we should just call them nuisance correlations?
+
+\subsection{Degeneracy}
+
+What if there are multiple statistics that have information about the stimulus? For example, in the Poisson case, both the mean and variance depend on $s$. They should have equivalent information. On the other hand, we have an intuition that higher-order statistics are less reliable. So, perhaps the difference is in the limit of finite data?
+
+If a hierarchical model is generating the data, then many of the statistics will be copies of one another, and degenerate (ie filled with bad noise). See Montufar... Bengio. Here we are modeling a shallow nonlinear code.
+
+
+\section{Figure List}
+\begin{enumerate}
+\item Concept of nonlinear CCs
+\item Optimal and suboptimal CCs, with and without bad noise
+\item Schematic of bad noise
+\item What nonlinearity? (polynomial decoding. Decode all terms, or just some)
+\item Suboptimal weight recovery for tanh. Include `scaling' vs weights.
+\item Data?
+\end{enumerate}
+
+%%%%%%%%%%%%
+
+\bibliographystyle{plos.bst}
+\bibliography{NonlinearCC_bib02}
+
+
+
+
+
+\end{document}
+
+
